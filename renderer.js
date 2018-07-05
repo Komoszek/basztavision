@@ -3,7 +3,6 @@
 // All of the Node.js APIs are available in this process.
 
 
-var streamBuffers = require('stream-buffers');
 var ffmpeg = require('fluent-ffmpeg');
 var rimraf = require('rimraf');
 var fs = require('fs');
@@ -11,10 +10,6 @@ var fs = require('fs');
 var CameraFramerate = 15;
 var CameraTime = 2;
 
-var stream = new streamBuffers.WritableStreamBuffer({
-    initialSize: (100 * 1024),   // start at 100 kilobytes.
-    incrementAmount: (100 * 1024) // grow by 10 kilobytes each time buffer overflows.
-});
   var cameraDirectory = ['camera0','camera1'];
   var cameraIndex = 0;
 
