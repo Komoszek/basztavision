@@ -1,21 +1,20 @@
 {
-  "name": "electron-quick-start",
-  "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "name": "less",
+  "version": "0.0.1",
+  "description": "Local Electron Security System",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/komoszek/less.git"
+  },
   "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo"
+    "Electron"
   ],
   "author": "GitHub",
-  "license": "CC0-1.0",
+  "license": "MIT",
   "devDependencies": {
     "electron": "^2.0.0",
     "electron-builder": "^20.19.1",
@@ -23,10 +22,12 @@
   },
   "dependencies": {
     "bulma": "^0.7.1",
-    "canvas": "^1.6.11",
     "file-base64": "^1.0.0",
     "fluent-ffmpeg": "^2.1.2",
-    "rimraf": "^2.6.2",
-    "stream-buffers": "^3.0.2"
-  }
+    "rimraf": "^2.6.2"
+  },
+  "bugs": {
+    "url": "https://github.com/komoszek/less/issues"
+  },
+  "homepage": "https://github.com/komoszek/less#readme"
 }
