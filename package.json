@@ -1,0 +1,32 @@
+{
+  "name": "electron-quick-start",
+  "version": "1.0.0",
+  "description": "A minimal Electron application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/electron/electron-quick-start",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^2.0.0",
+    "electron-builder": "^20.19.1",
+    "electron-rebuild": "^1.8.1"
+  },
+  "dependencies": {
+    "bulma": "^0.7.1",
+    "canvas": "^1.6.11",
+    "file-base64": "^1.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "rimraf": "^2.6.2",
+    "stream-buffers": "^3.0.2"
+  }
+}

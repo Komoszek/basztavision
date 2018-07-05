@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Hello World!</title>
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+    <link rel="stylesheet" type="text/css" href="node_modules/bulma/css/bulma.min.css">
+
+  </head>
+  <body>
+<div class="columns is-gapless ">
+  <div class="column is-half is-flex cameraColumn">
+    <img id="camera0" class="cameraFeed" src="data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs="/>
+  </div>
+  <div class="column is-half is-flex cameraColumn">
+
+    <img id="camera1" class="cameraFeed" src="data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=" />
+</div>
+</div>
+
+    <script>
+      // You can also require other files to run in this process
+      require('./renderer.js')
+    </script>
+  </body>
+</html>
