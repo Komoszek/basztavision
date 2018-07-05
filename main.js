@@ -22,8 +22,10 @@ if (!fs.existsSync(dir)){
     fs.mkdirSync(dir);
 }
 
-rimraf('/dev/shm/less/camera0/*', function () { console.log('done'); });
-rimraf('/dev/shm/less/camera1/*', function () { console.log('done'); });
+rimraf('/dev/shm/less/camera0/*', function () { //console.log('done'); 
+});
+rimraf('/dev/shm/less/camera1/*', function () { //console.log('done'); 
+});
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -33,7 +35,7 @@ function createWindow () {
 
 
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600})
+  mainWindow = new BrowserWindow({width: 560, height: 840})
 
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')

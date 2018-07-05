@@ -7,9 +7,9 @@ var ffmpeg = require('fluent-ffmpeg');
 var rimraf = require('rimraf');
 var fs = require('fs');
 
-var CameraFramerate = 15;
+var CameraFramerate = 10;
 var CameraTime = 2;
-
+var CameraSize = '640x480';
   var cameraDirectory = ['camera0','camera1'];
   var cameraIndex = 0;
 
@@ -20,6 +20,7 @@ var CameraTime = 2;
   var frameCounter1 = 1;
 
   var base64 = require('file-base64');
+  var cameraborder= {};
 
 
 
@@ -35,8 +36,14 @@ var CameraTime = 2;
             document.getElementById(id).src = '/dev/shm/less/'+id+'/feed_'+n+'.bmp';
             console.log('/dev/shm/less/'+id+'/feed_'+n+'.bmp');
           }*/
+console.log('/dev/shm/less/'+id+'/feed_'+n+'.bmp');
           base64.encode('/dev/shm/less/'+id+'/feed_'+n+'.bmp', function(err, base64String) {
             document.getElementById(id).src = 'data:image/png;base64, ' + base64String;
+
+            document.getElementById(id).setAttribute('data-active','true');
+            clearTimeout(cameraborder[id]);
+            cameraborder[id]= setTimeout(function(){document.getElementById(id).setAttribute('data-active','false')},150,id)
+
 });
 
 
@@ -60,7 +67,7 @@ var switchCamera1 =  ffmpeg('/dev/video0')    // Set input format (depends on OS
     .inputOption('-channel 0')
     // Set size
     .fps(CameraFramerate)
-    .size('640x480')
+    .size(CameraSize)
     .takeFrames(CameraFramerate*CameraTime)
     .output('/dev/shm/less/camera0/feed_%0d.bmp').on('start', function(commandLine) {
       rimrafed['camera1'] = true;
@@ -91,7 +98,7 @@ frameCounter1 = 1
       .inputOption('-channel 0')
       // Set size
       .fps(CameraFramerate)
-      .size('640x480')
+      .size(CameraSize)
       .takeFrames(CameraFramerate*CameraTime)
       .output('/dev/shm/less/camera1/feed_%0d.bmp').on('start', function(commandLine) {
         rimrafed['camera0'] = true;
