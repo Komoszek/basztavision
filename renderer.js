@@ -2,136 +2,119 @@
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
 
-
-var ffmpeg = require('fluent-ffmpeg');
-var rimraf = require('rimraf');
 var fs = require('fs');
 
-var CameraFramerate = 10;
-var CameraTime = 2;
-var CameraSize = '640x480';
-  var cameraDirectory = ['camera0','camera1'];
-  var cameraIndex = 0;
-
-  var date1 = new Date();
-
-  var rimrafed = {'camera0' : false, 'camera1' : false};
-  var frameCounter0 = 1;
-  var frameCounter1 = 1;
 
   var base64 = require('file-base64');
-  var cameraborder= {};
 
+var height = 480;
+var width = 640;
+var clickCamera0 = 0;
+var clickCamera1 = 0;
+var clickCamera0Timeout;
+var clickCamera1Timeout;
 
+var click = {'camera0':0,'camera1':0};
+var clickTimeout = {'camera0':'','camera1':''};
 
+var cameras = document.getElementsByClassName('cameraContainer');
 
-  updateCamera = function(id, n, limit){
-    if(n > limit || rimrafed[id] === true)
-      return;
-      //console.log(rimrafed);
-    fs.stat('/dev/shm/less/'+id+'/feed_'+n+'.bmp', function(err, stat) {
-      if(err == null) {
-          //console.log('File exists');
-          /*if(document.getElementById(id).src !== '/dev/shm/less/'+id+'/feed_'+n+'.bmp'){
-            document.getElementById(id).src = '/dev/shm/less/'+id+'/feed_'+n+'.bmp';
-            console.log('/dev/shm/less/'+id+'/feed_'+n+'.bmp');
-          }*/
-console.log('/dev/shm/less/'+id+'/feed_'+n+'.bmp');
-          base64.encode('/dev/shm/less/'+id+'/feed_'+n+'.bmp', function(err, base64String) {
-            document.getElementById(id).src = 'data:image/png;base64, ' + base64String;
+if(window.innerHeight*width > window.innerWidth*height*2){
+  for(var i=0;i<cameras.length;i++)
+    cameras[i].setAttribute('data-mode','ver');
+} else {
+    for(var i=0;i<cameras.length;i++)
+      cameras[i].setAttribute('data-mode','hor');
+}
 
-            document.getElementById(id).setAttribute('data-active','true');
-            clearTimeout(cameraborder[id]);
-            cameraborder[id]= setTimeout(function(){document.getElementById(id).setAttribute('data-active','false')},150,id)
+var child_process = require('child_process')
 
-});
+start();
+function start(){
 
+  var child = child_process.spawn('./grab');
 
-          setTimeout(function(){updateCamera(id,n+1,limit)},1000/CameraFramerate);
-      } else if(err.code == 'ENOENT') {
-    //    console.log('/dev/shm/less/'+id+'/feed_'+n+'.bmp');
-        setTimeout(function(){updateCamera(id,n,limit)},1000/CameraFramerate/2);
-      } else {
-          //console.log('Some other error: ', err.code);
-          setTimeout(function(){updateCamera(id,n,limit)},1000/CameraFramerate/2);
+  // use event hooks to provide a callback to execute when data are available:
+  child.stdout.on('data', function(feed) {
+      feed = feed.toString().split(',')
+      feed[1] = parseInt(feed[1]);
 
-      }
+      fs.stat('/dev/shm/less/'+feed[0]+'/'+feed[1]+'.jpeg', function(err, stat) {
+        if(err == null) {
+
+            base64.encode('/dev/shm/less/'+feed[0]+'/'+feed[1]+'.jpeg', function(err, base64String) {
+              document.getElementById(feed[0]).src = 'data:image/jpeg;base64, ' + base64String;
+
   });
 
+
+        } else if(err.code == 'ENOENT') {
+         console.log('pszypau');
+        } else {
+            console.log('Some other error: ', err.code);
+
+        }
+    });
+
+  });
+
+  child.on('exit', function (code) {
+        console.log('child process exited with code ' + code);
+        delete(child);
+        setTimeout(start, 100);
+    });
+
+
+}
+
+
+
+
+window.addEventListener('resize', function(event){
+
+  var cameras = document.getElementsByClassName('cameraContainer');
+
+  if(window.innerHeight*width > window.innerWidth*height*2){
+    for(var i=0;i<cameras.length;i++)
+      cameras[i].setAttribute('data-mode','ver');
+  } else {
+      for(var i=0;i<cameras.length;i++)
+        cameras[i].setAttribute('data-mode','hor');
   }
-
-
-var switchCamera1 =  ffmpeg('/dev/video0')    // Set input format (depends on OS, will not work if this isn't correct!)
-    .inputFormat('v4l2')
-    // Set output format
-    .inputOption('-channel 0')
-    // Set size
-    .fps(CameraFramerate)
-    .size(CameraSize)
-    .takeFrames(CameraFramerate*CameraTime)
-    .output('/dev/shm/less/camera0/feed_%0d.bmp').on('start', function(commandLine) {
-      rimrafed['camera1'] = true;
-
-      rimraf('/dev/shm/less/camera1/*', function () { //console.log('done');
-    });
-  //  console.log('Spawned Ffmpeg with command: ' + commandLine);
-  }).on('end', function() {
-    rimrafed['camera1'] = false;
-
-frameCounter1 = 1
-
-  setTimeout(function(){
-    updateCamera('camera1', frameCounter1, CameraFramerate*CameraTime);
-
-  cameraIndex = 1;
-    switchCamera2.run();
-  },150);
-
-}).on('error',function(err, stdout, stderr){
-  console.log(err);
-  setTimeout(function(){switchCamera1.run()},200);
+//17/24 - stosunek szerokości do wysokości dla pionowości
+// 8/3 - stosunek szerokości do wysokości dla poziomości
 });
 
-  var switchCamera2 =  ffmpeg('/dev/video0')    // Set input format (depends on OS, will not work if this isn't correct!)
-      .inputFormat('v4l2')
-      // Set output format
-      .inputOption('-channel 0')
-      // Set size
-      .fps(CameraFramerate)
-      .size(CameraSize)
-      .takeFrames(CameraFramerate*CameraTime)
-      .output('/dev/shm/less/camera1/feed_%0d.bmp').on('start', function(commandLine) {
-        rimrafed['camera0'] = true;
+var fullscreenClick = function (){
 
-        rimraf('/dev/shm/less/camera0/*', function () {
-        //  console.log('done');
-
-  });
-  //    console.log('Spawned Ffmpeg with command: ' + commandLine);
-    }).on('end', function() {
-
-      rimrafed['camera0'] = false;
-      frameCounter0 = 1;
-
-setTimeout(function(){
-  updateCamera('camera0', frameCounter0, CameraFramerate*CameraTime);
-
-  cameraIndex = 0;
-  switchCamera1.run();
-},150);
-
-    }).on('error',function(err, stdout, stderr){
-      console.log(err);
-      setTimeout(function(){switchCamera2.run()},200);
-    });
-
-updateCamera('camera0', frameCounter0, CameraFramerate*CameraTime);
-switchCamera1.run();
+  console.log(this.className);
+  if(click[this.id] == 1){
+    var fullscreening = false;
+    clearTimeout(clickTimeout[click[this.id]]);
+    click[this.id] = 0;
+    var fullscreened = document.getElementsByClassName('fullscreen');
+    if(this.className != 'cameraContainer fullscreen'){
+      console.log('chuj');
+      fullscreening = true;
 
 
-/*
-stream.on('data', function(data) {
-  document.getElementById('camera1').src = 'data:image/png;base64, '+ stream.getContents().toString('base64');
+    }
+    console.log(fullscreened.length);
+    for(var i=0;i<fullscreened.length;i++){
+      fullscreened[i].className = 'cameraContainer';
+    }
+    if(fullscreening)
+      this.className = 'cameraContainer fullscreen';
 
-});
-*/
+
+  } else {
+    click[this.id] = 1;
+    clickTimeout[click[this.id]] = setTimeout(function(id){
+      click[id] = 0;
+      console.log('dupa');
+    },500,this.id);
+  }
+}
+
+document.getElementById('camera0Container').addEventListener('click', fullscreenClick);
+document.getElementById('camera1Container').addEventListener('click', fullscreenClick);

@@ -1,5 +1,7 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+
+const {app, BrowserWindow} = require('electron');
+
 
 const fs = require('fs');
 const rimraf = require('rimraf');
@@ -31,12 +33,29 @@ rimraf('/dev/shm/less/camera1/*', function () { //console.log('done');
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
+var shouldQuit = app.makeSingleInstance(function(commandLine, workingDirectory) {
+  // Someone tried to run a second instance, we should focus our window.
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.maximize();
+    mainWindow.focus();
+  }
+});
+
+if (shouldQuit) {
+  app.quit();
+  return;
+}
+
+
+
+
 function createWindow () {
 
 
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 560, height: 840})
-
+	mainWindow.maximize();
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
 
