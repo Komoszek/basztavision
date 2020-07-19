@@ -20,6 +20,7 @@ struct RGBImage {
 class Webcam {
 
 public:
+    int input = 0;
     Webcam(const std::string& device = "/dev/video0", 
            int width = 640, 
            int height = 480);

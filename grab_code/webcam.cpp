@@ -61,9 +61,9 @@ static int xioctl(int fh, unsigned long int request, void *arg)
  */
 #define CLIP(color) (unsigned char)(((color) > 0xFF) ? 0xff : (((color) < 0) ? 0 : (color)))
 
-static void v4lconvert_yuyv_to_rgb24(const unsigned char *src, 
+static void v4lconvert_yuyv_to_rgb24(const unsigned char *src,
                                      unsigned char *dest,
-                                     int width, int height, 
+                                     int width, int height,
                                      int stride)
 {
     int j;
@@ -92,7 +92,7 @@ static void v4lconvert_yuyv_to_rgb24(const unsigned char *src,
 /*******************************************************************/
 
 
-Webcam::Webcam(const string& device, int width, int height) : 
+Webcam::Webcam(const string& device, int width, int height) :
                         device(device),
                         xres(width),
                         yres(height)
@@ -185,14 +185,17 @@ bool Webcam::read_frame()
 
     assert(buf.index < n_buffers);
 
+    
+    if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
+        throw runtime_error("VIDIOC_QBUF");
+
+    change_input(input == 0 ? 1 : 0);
+
     v4lconvert_yuyv_to_rgb24((unsigned char *) buffers[buf.index].data,
                              rgb_frame.data,
                              xres,
                              yres,
                              stride);
-
-    if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
-        throw runtime_error("VIDIOC_QBUF");
 
     return true;
 }
@@ -411,5 +414,3 @@ void Webcam::stop_capturing(void)
     if (-1 == xioctl(fd, VIDIOC_STREAMOFF, &type))
         throw runtime_error("VIDIOC_STREAMOFF");
 }
-
-

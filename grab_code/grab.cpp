@@ -1,8 +1,9 @@
 #include <iostream>
 #include <fstream>
-
+#include <cstring>
 #include "webcam.h"
 #include <jpeglib.h>
+#include <sys/time.h>
 
 #define XRES 640
 #define YRES 480
@@ -61,31 +62,49 @@ static void jpegWrite(unsigned char* img,const char* jpegFilename)
 
 int main(int argc, char** argv)
 {
+    struct timeval tp;
+
+    bool recordMode = false;
+    for(int i =0;i<argc;i++)
+    {
+        if(strcmp(argv[i],"--record-mode") == 0)
+            recordMode = true;
+
+    }
     ofstream image;
 
-    Webcam webcam("/dev/video0", XRES, YRES);
+    string videoSourcePath = "/dev/video0";
+
+    Webcam webcam(videoSourcePath, XRES, YRES);
     auto frame = webcam.frame();
     string filename;
-    int k = 0;
     int n[2]= {0,0};
-struct timespec start, finish;
-double elapsed;
+    struct timespec start, finish;
+    string jpegname;
+    double elapsed;
     for(;;){
 
-        webcam.change_input(k);
+//      webcam.change_input(k);
 	webcam.frame();
 
         frame = webcam.frame();
-        filename = "/dev/shm/less/camera"+std::to_string(k) + "/" + std::to_string(n[k]) + ".jpeg";
+        gettimeofday(&tp, NULL);
+
+        if(recordMode)
+            jpegname = std::to_string(tp.tv_sec * 1000 + tp.tv_usec / 1000);
+        else
+            jpegname = std::to_string(n[webcam.input]);
+
+        filename = "/dev/shm/less/camera"+std::to_string(webcam.input) + "/" + jpegname + ".jpeg";
         jpegWrite(frame.data,filename.c_str());
 
-        cout << "camera" + std::to_string(k) + "," + std::to_string(n[k]) + "" << endl;
+        cout << "camera" << std::to_string(webcam.input) << "," << jpegname << endl;
 
-        n[k]++;
-        if(n[k] == 60){
-            n[k] = 0;
+        n[webcam.input]++;
+        if(n[webcam.input] == 60){
+            n[webcam.input] = 0;
         }
-        k = k == 0 ? 1 : 0;
+        webcam.input = webcam.input == 0 ? 1 : 0;
     }
     return 0;
 }

@@ -74,9 +74,20 @@ body {
   margin:0!important;
 }
 
+#contextmenuContainer {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  z-index:2000;
+}
 
-#camera1{
--webkit-filter: contrast(300%);
--webkit-filter: brightness(78%);
+#contextmenu{
+  position:absolute;
+  z-index:3000;
+}
 
+#contextmenuSpan{
+  text-align:center;
 }

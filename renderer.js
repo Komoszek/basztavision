@@ -2,11 +2,6 @@
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
 
-var fs = require('fs');
-var ini = require('ini');
-var base64 = require('file-base64');
-var child_process = require('child_process');
-
 var click = {};
 var clickTimeout = {};
 var cameraRecordStack = {};
@@ -20,6 +15,26 @@ var config,
   videoRecordDuration,
   videoDeleteTime,
   videoPath;
+
+  var ContextMenuContainer = document.getElementById('contextmenuContainer');
+  var ContextMenu = document.getElementById('contextmenu');
+
+
+FocusedCamera = null;
+
+ContextMenuContainer.onclick = e => {
+  if(e.target === ContextMenuContainer){
+    ContextMenuContainer.classList.add('is-hidden');
+    if(!config.cameras)
+      config.cameras = {};
+
+    config.cameras[FocusedCamera].brightness = document.getElementById('brightness-slider').value;
+    config.cameras[FocusedCamera].contrast = document.getElementById('contrast-slider').value;
+
+    fs.writeFileSync('./config.ini', ini.stringify(config));
+
+  }
+}
 
 if(fs.existsSync('./config.ini')){
   var wasAnyUndefined = false;
@@ -165,6 +180,25 @@ if(fs.existsSync('./config.ini')){
 
 delete config;
 
+var updateImgFilter = (id, brightness, contrast) => {
+  document.getElementById(id).style.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+}
+
+var resetValues = () => {
+
+  document.getElementById('brightness-slider').value = 100;
+  document.getElementById('contrast-slider').value = 100;
+  
+  updateImgFilter(FocusedCamera, 100, 100);
+}
+
+var updateSlider = () => {
+  console.log('aa');
+  var brightness = document.getElementById('brightness-slider').value;
+  var contrast = document.getElementById('contrast-slider').value;
+
+  updateImgFilter(FocusedCamera, brightness, contrast);
+}
 
 var cameraView = document.createElement('div');
 cameraView.className = 'cameraContainer';
@@ -175,13 +209,27 @@ cameraImage.className = 'cameraFeed';
 var mainCameraContainer = document.getElementById('mainCameraContainer');
 cameraView.appendChild(cameraImage);
 
-for(var i = 0;i<numberOfCameras;i++){
+for(let i = 0;i<numberOfCameras;i++){
   cameraView.id = 'camera'+ i + 'Container';
   cameraView.childNodes[0].id = 'camera' + i;
   document.getElementById('mainCameraContainer').appendChild(cameraView.cloneNode(true));
   if(numberOfCameras != 1)
-    document.getElementById('camera'+i+'Container').addEventListener('click', fullscreenClick);
+    document.getElementById('camera'+i+'Container').addEventListener('dblclick', function(){this.classList.toggle('fullscreen')});
   document.getElementById('camera' + i).ondragstart = function() { return false; };
+
+  document.getElementById(`camera${i}`).addEventListener('contextmenu', e => {
+    console.log(e);
+    FocusedCamera = `camera${i}`;
+    if(config.cameras && config.cameras[FocusedCamera]){
+      document.getElementById('brightness-slider').value = config.cameras[FocusedCamera].brightness || 100;
+      document.getElementById('contrast-slider').value = config.cameras[FocusedCamera].contrast || 100;
+    }
+
+    document.getElementById('contextmenuSpan').innerHTML = `Kamera ${i}`;
+    ContextMenuContainer.classList.remove('is-hidden');
+    document.getElementById('contextmenu').style.top = `${e.y}px`;
+    document.getElementById('contextmenu').style.left = `${e.x}px`;
+  })
 
   if(videoRecording){
     cameraRecordStack['camera' + i] = {};
@@ -191,7 +239,13 @@ for(var i = 0;i<numberOfCameras;i++){
     cameraRecordStack['camera' + i].end = 0
   }
 
+  if(config.cameras)
+    for(id in config.cameras)
+      if(document.getElementById(id))
+        updateImgFilter(id,config.cameras[id].brightness,config.cameras[id].contrast);
 }
+
+
 
 CameraLayoutChange();
 
@@ -278,32 +332,6 @@ function startGrabbing(){
 
 window.addEventListener('resize', CameraLayoutChange);
 
-var fullscreenClick = function (){
-
-  if(click[this.id] == 1){
-    var fullscreening = false;
-    clearTimeout(clickTimeout[click[this.id]]);
-    click[this.id] = 0;
-    var fullscreened = document.getElementsByClassName('fullscreen');
-    if(this.className != 'cameraContainer fullscreen'){
-      fullscreening = true;
-
-    }
-    for(var i=0;i<fullscreened.length;i++){
-      fullscreened[i].className = 'cameraContainer';
-    }
-    if(fullscreening)
-      this.className = 'cameraContainer fullscreen';
-
-
-  } else {
-    click[this.id] = 1;
-    clickTimeout[click[this.id]] = setTimeout(function(id){
-      click[id] = 0;
-    },500,this.id);
-  }
-}
-
 function videoRecordLoop(){
   console.log(cameraRecordStack);
   for(var i=0;i<numberOfCameras;i++){
@@ -313,7 +341,7 @@ function videoRecordLoop(){
 
           cameraRecordStack['camera' + i].end = parseInt(cameraRecordStack['camera' + i].frames[j+1]);
           //DODAJ KLATKĘ do TXT, CZAS Z KLATKI J+1-tej
-          
+
           if(cameraRecordStack['camera' + i].end - cameraRecordStack['camera' + i].start > videoRecordDuration * 60000){
             cameraRecordStack['camera' + i].frames.splice(0, j+1);
             // UŻYJ FFMPEG
