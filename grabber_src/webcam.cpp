@@ -92,10 +92,11 @@ static void v4lconvert_yuyv_to_rgb24(const unsigned char *src,
 /*******************************************************************/
 
 
-Webcam::Webcam(const string& device, int width, int height) :
+Webcam::Webcam(const string& device, int width, int height, int feedsNumber) :
                         device(device),
                         xres(width),
-                        yres(height)
+                        yres(height),
+                        feedsNumber(feedsNumber)
 {
     open_device();
     init_device();
@@ -161,7 +162,6 @@ bool Webcam::read_frame()
 {
 
     struct v4l2_buffer buf;
-    unsigned int i;
 
     CLEAR(buf);
 
@@ -185,17 +185,15 @@ bool Webcam::read_frame()
 
     assert(buf.index < n_buffers);
 
-    
     if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
         throw runtime_error("VIDIOC_QBUF");
-
-    change_input(input == 0 ? 1 : 0);
 
     v4lconvert_yuyv_to_rgb24((unsigned char *) buffers[buf.index].data,
                              rgb_frame.data,
                              xres,
                              yres,
                              stride);
+    rgb_frame.id = input;
 
     return true;
 }
@@ -287,7 +285,6 @@ void Webcam::init_device(void)
     struct v4l2_cropcap cropcap;
     struct v4l2_crop crop;
     struct v4l2_format fmt;
-    unsigned int min;
 
     if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &cap)) {
         if (EINVAL == errno) {
@@ -377,12 +374,12 @@ void Webcam::uninit_device(void)
 }
 
 void Webcam::change_input(int index){
-
-    if (-1 == xioctl(fd, VIDIOC_S_INPUT, &index)) {
+    if (-1 == xioctl(fd, VIDIOC_S_INPUT, &index))
         perror("VIDIOC_S_INPUT");
-    }
+}
 
-
+int Webcam::next_input(){
+  return (input+1)%feedsNumber;
 }
 
 void Webcam::start_capturing(void)

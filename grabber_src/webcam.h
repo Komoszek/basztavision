@@ -14,16 +14,18 @@ struct RGBImage {
       size_t          width;
       size_t          height;
       size_t          size; // width * height * 3
+      uint            id; // input id
 };
 
 
 class Webcam {
 
 public:
+    int feedsNumber;
     int input = 0;
-    Webcam(const std::string& device = "/dev/video0", 
-           int width = 640, 
-           int height = 480);
+    Webcam(const std::string& device = "/dev/video0",
+           int width = 640,
+           int height = 480, int feedsNumber = 1);
 
     ~Webcam();
 
@@ -34,12 +36,13 @@ public:
      * width * height * 3)
      *
      * This call blocks until a frame is available or until the provided
-     * timeout (in seconds). 
+     * timeout (in seconds).
      *
      * Throws a runtime_error if the timeout is reached.
      */
     const RGBImage& frame(int timeout = 1);
     void change_input(int index = 0);
+    int next_input();
 
 private:
     void init_mmap();
@@ -67,7 +70,3 @@ private:
 
     bool force_format = true;
 };
-
-
-
-

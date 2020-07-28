@@ -1,6 +1,7 @@
 // This file is required by the index.html file and will
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
+var ctx = {};
 
 var click = {};
 var clickTimeout = {};
@@ -117,7 +118,7 @@ if(fs.existsSync('./config.ini')){
     } else {
       wasAnyUndefined = true;
 
-      videoRecording = true;
+      videoRecording = false;
       config.recordingOptions.videoRecording = videoRecording;
     }
 
@@ -158,8 +159,8 @@ if(fs.existsSync('./config.ini')){
   cameraWidth = 640;
   cameraPath = '/dev/video0';
   numberOfCameras = 2;
-  videoRecording = true;
-  videoRecordDuration = 1; // Create recording that durates aproximetly 1 minute
+  videoRecording = false;
+  videoRecordDuration = 1; // Create 1 minute recording
   videoDeleteTime = 7; // Keep data of last 7 days
   videoPath = '~/Nagrania';
 
@@ -180,15 +181,33 @@ if(fs.existsSync('./config.ini')){
 
 delete config;
 
+let worker = grabber.run(parseInt(numberOfCameras),cameraPath,
+  (err, result) => {
+  if(dest){
+    rgbData = new Uint8Array(result.data);
+
+      var s = 0, d = 0;
+      while (d < n) {
+
+          dest.data[d++] = rgbData[s++];
+          dest.data[d++] = rgbData[s++];
+          dest.data[d++] = rgbData[s++];
+          d++;    // skip the alpha byte
+      }
+      ctx[result.id].putImageData(dest, 0, 0);
+
+  }
+
+});
+
 var updateImgFilter = (id, brightness, contrast) => {
   document.getElementById(id).style.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
 }
 
 var resetValues = () => {
-
   document.getElementById('brightness-slider').value = 100;
   document.getElementById('contrast-slider').value = 100;
-  
+
   updateImgFilter(FocusedCamera, 100, 100);
 }
 
@@ -202,12 +221,22 @@ var updateSlider = () => {
 
 var cameraView = document.createElement('div');
 cameraView.className = 'cameraContainer';
-var cameraImage = document.createElement('img');
-//cameraImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
-cameraImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQA2137CAkQBADs=';
-cameraImage.className = 'cameraFeed';
+var cameraCanvas = document.createElement('canvas');
+cameraCanvas.className = 'cameraFeed';
+cameraCanvas.height = 480;
+cameraCanvas.width = 640;
+
+var def_ctx = cameraCanvas.getContext("2d");
+def_ctx.fillStyle = '#000000'; // implicit alpha of 1
+def_ctx.fillRect(0, 0, def_ctx.canvas.width, def_ctx.canvas.height);
+
+var dest = def_ctx.getImageData(0, 0, def_ctx.canvas.width, def_ctx.canvas.height);
+
+var n = 4 * def_ctx.canvas.width * def_ctx.canvas.height;
+
 var mainCameraContainer = document.getElementById('mainCameraContainer');
-cameraView.appendChild(cameraImage);
+
+cameraView.appendChild(cameraCanvas);
 
 for(let i = 0;i<numberOfCameras;i++){
   cameraView.id = 'camera'+ i + 'Container';
@@ -215,9 +244,13 @@ for(let i = 0;i<numberOfCameras;i++){
   document.getElementById('mainCameraContainer').appendChild(cameraView.cloneNode(true));
   if(numberOfCameras != 1)
     document.getElementById('camera'+i+'Container').addEventListener('dblclick', function(){this.classList.toggle('fullscreen')});
-  document.getElementById('camera' + i).ondragstart = function() { return false; };
 
-  document.getElementById(`camera${i}`).addEventListener('contextmenu', e => {
+  c = document.getElementById(`camera${i}`);
+  ctx[i] = c.getContext("2d");
+
+  c.ondragstart = function() { return false; };
+
+  c.addEventListener('contextmenu', e => {
     console.log(e);
     FocusedCamera = `camera${i}`;
     if(config.cameras && config.cameras[FocusedCamera]){
@@ -246,19 +279,14 @@ for(let i = 0;i<numberOfCameras;i++){
 }
 
 
-
 CameraLayoutChange();
 
-startGrabbing();
-
-function CameraLayoutChange(){
+const CameraLayoutChange = () => {
   var cameras = document.getElementsByClassName('cameraContainer');
-
 
   if(numberOfCameras == 1){
     cameras[0].className = 'cameraContainer fullscreen';
-
-  } else{
+  } else {
 
     var verticalClassName = 'ver';
     var horizontalClassName = 'hor';
@@ -266,10 +294,9 @@ function CameraLayoutChange(){
       verticalClassName += '-' + numberOfCameras;
 
       horizontalClassName += '-grid';
-
     }
-  //Poziomo
 
+  //Poziomo
   var CalculatedHeightHor = window.innerWidth*cameraHeight/(2*cameraWidth); // Wysokość dla ograniczenia na szerokość
   var CalculatedWidthHor = numberOfCameras == 2 ? cameraWidth/cameraHeight*window.innerHeight : (cameraWidth*2*window.innerHeight/cameraHeight); // szerokość dla ograniczenia na wysokość
 
@@ -287,52 +314,14 @@ function CameraLayoutChange(){
         for(var i=0;i<cameras.length;i++)
           cameras[i].setAttribute('data-mode', horizontalClassName);
     }
-
-
   }
 }
-
-function startGrabbing(){
-
-  var child = child_process.spawn('./grab');
-
-  // use event hooks to provide a callback to execute when data are available:
-  child.stdout.on('data', function(feed) {
-      feed = feed.toString().split(',')
-      feed[1] = parseInt(feed[1]);
-
-      fs.stat('/dev/shm/less/'+feed[0]+'/'+feed[1]+'.jpeg', function(err, stat) {
-        if(err == null) {
-            base64.encode('/dev/shm/less/'+feed[0]+'/'+feed[1]+'.jpeg', function(err, base64String) {
-              if(document.getElementById(feed[0]) !== null)
-              document.getElementById(feed[0]).src = 'data:image/jpeg;base64, ' + base64String;
-            });
-
-            if(videoRecording){
-          //    cameraRecordStack[ feed[0] ].frames.push(feed[1]);
-            }
-
-        } else if(err.code == 'ENOENT') {
-         console.log('pszypau');
-        } else {
-            console.log('Some other error: ', err.code);
-
-        }
-    });
-
-  });
-
-  child.on('exit', function (code) {
-        console.log('child process exited with code ' + code);
-        delete(child);
-        setTimeout(start, 100);
-    });
-}
-
 
 window.addEventListener('resize', CameraLayoutChange);
 
 function videoRecordLoop(){
+  // WIP
+
   console.log(cameraRecordStack);
   for(var i=0;i<numberOfCameras;i++){
     for(var j=0;j<cameraRecordStack['camera' + i].frames.length;j++){
