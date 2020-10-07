@@ -80,13 +80,18 @@ static void v4lconvert_yuyv_to_rgb24(const unsigned char *src,
             *dest++ = CLIP(src[0] + v1);
             *dest++ = CLIP(src[0] - rg);
             *dest++ = CLIP(src[0] + u1);
+            *dest++ = 255;
 
             *dest++ = CLIP(src[2] + v1);
             *dest++ = CLIP(src[2] - rg);
             *dest++ = CLIP(src[2] + u1);
+            *dest++ = 255;
+
             src += 4;
         }
         src += stride - (width * 2);
+
+
     }
 }
 /*******************************************************************/
@@ -103,10 +108,10 @@ Webcam::Webcam(const string& device, int width, int height, int feedsNumber) :
 
     // xres and yres are set to the actual resolution provided by the cam
 
-    // frame stored as RGB888 (ie, RGB24)
+    // frame stored as RGBA8888 (ie, RGBA32)
     rgb_frame.width = xres;
     rgb_frame.height = yres;
-    rgb_frame.size = xres * yres * 3;
+    rgb_frame.size = xres * yres * 4; //RGBA
     rgb_frame.data = (unsigned char *) malloc(rgb_frame.size * sizeof(char));
 
     start_capturing();
