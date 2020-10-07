@@ -10,10 +10,10 @@ struct buffer {
 };
 
 struct RGBImage {
-      unsigned char   *data; // RGB888 <=> RGB24
+      unsigned char   *data; // RGBA8888 <=> RGB32
       size_t          width;
       size_t          height;
-      size_t          size; // width * height * 3
+      size_t          size; // width * height * 4
       uint            id; // input id
 };
 
@@ -31,9 +31,9 @@ public:
 
     /** Captures and returns a frame from the webcam.
      *
-     * The returned object contains a field 'data' with the image data in RGB888
-     * format (ie, RGB24), as well as 'width', 'height' and 'size' (equal to
-     * width * height * 3)
+     * The returned object contains a field 'data' with the image data in RGBA8888
+     * format (ie, RGBA32), as well as 'width', 'height' and 'size' (equal to
+     * width * height * 4)
      *
      * This call blocks until a frame is available or until the provided
      * timeout (in seconds).

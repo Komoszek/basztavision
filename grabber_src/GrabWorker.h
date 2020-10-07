@@ -40,7 +40,7 @@ class GrabWorker : public AsyncProgressWorker<RGBImage> {
 
         Object obj = Object::New(Env());
 
-        obj.Set("data", ArrayBuffer::New(Env(), data->data, data->size));
+        obj.Set("data", Uint8Array::New(Env(), data->size, ArrayBuffer::New(Env(), data->data, data->size), 0, napi_uint8_clamped_array));
         obj.Set("width", data->width);
         obj.Set("height", data->height);
         obj.Set("size", data->size);
