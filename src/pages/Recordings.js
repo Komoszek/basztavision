@@ -3,14 +3,6 @@ import { Link } from "react-router-dom";
 import Logo from "../logo.svg";
 import "./Recordings.scss";
 
-const Store = window.require("electron-store");
-
-const fs = window.require("fs");
-
-const store = new Store();
-
-var chokidar = window.require('chokidar');
-
 const singleToDoubleDigit = n => n < 10 ? `0${n}` : n;
 
 const nameToDate = timestamp => {
@@ -24,44 +16,44 @@ function VideoListElement(props){
 }
 
 function Recordings(){
-  const [recordingPath, setRecordingPath] = useState(store.get('recording.path'));
+  const [recordingPath, setRecordingPath] = useState(window.store.get('recording.path'));
 
+  const [units, setUnits] = useState(window.electron.getUnits(recordingPath));
 
-  const [units, setUnits] = useState(fs.readdirSync(recordingPath, { withFileTypes: true })
-    .filter(dirent => dirent.isDirectory())
-    .map(dirent => dirent.name));
+  const [selectedUnit, setSelectedUnit] = useState(null);
+  const [videos, setVideos] = useState(null);
 
+  const [videoTime, setVideoTime] = useState(null);
+  const [activeVideo, setActiveVideoData] = useState({name:null});
 
-    const [selectedUnit, setSelectedUnit] = useState(null);
-    const [videos, setVideos] = useState(null);
-
-    const [videoTime, setVideoTime] = useState(null);
-    const [activeVideo, setActiveVideoData] = useState({name:null});
-
-    const updateActiveVideo = name => setActiveVideoData({name:name,
-                         start: name ? parseInt(name.split(',')[0]) : null
-                       });
+  const updateActiveVideo = name => setActiveVideoData({name:name,
+                       start: name ? parseInt(name.split(',')[0]) : null
+                     });
 
   //change to useReducer
 
     useEffect(() => {
       if(selectedUnit) {
-        setVideos(fs.readdirSync(`${recordingPath}/${selectedUnit}`,
-        { withFileTypes: true }).filter(dirent => dirent.isFile()).map(dirent => dirent.name));
-        var watcher = chokidar.watch(`${recordingPath}/${selectedUnit}`, {ignored: /^\./,ignoreInitial:true, persistent: true, cwd: `${recordingPath}/${selectedUnit}`})
-        .on('add', path => {
-          setVideos(old => [...old, path]);
-        }).on('unlink', path => {
-          setVideos(old => old.filter(e => e !== path));
-        });
+        setVideos(window.electron.getVideos(`${recordingPath}/${selectedUnit}`));
+        var watcher = window.electron.startWatcher(
+          `${recordingPath}/${selectedUnit}`,
+          {ignored: /^\./,ignoreInitial:true, persistent: true, cwd: `${recordingPath}/${selectedUnit}`},
+          path => {
+            setVideos(old => [...old, path]);
+          },
+          path => {
+            setVideos(old => old.filter(e => e !== path));
+          }
+        );
 
       } else {
         updateActiveVideo(null);
         setVideos(null);
       }
       return(() => {
+        console.log(watcher);
         if(watcher)
-          watcher.close();
+          window.electron.closeWatcher(watcher);
       })
 
     },[selectedUnit]);
@@ -86,16 +78,17 @@ function Recordings(){
               </div>
             </div>
               <aside className="menu">
-  <p className="menu-label">
-    Nagrania
-  </p>
-  <ul className="menu-list">
-  {videos ? <>{videos.map(e => <VideoListElement key={e} isActive={e === activeVideo.name} setActive={() => updateActiveVideo(e)} name={e}/>)}</> : <></>}
-  </ul>
-  </aside>
+              <p className="menu-label">
+                Nagrania
+              </p>
+              <ul className="menu-list">
+              {videos ? <>{videos.map(e => <VideoListElement key={e} isActive={e === activeVideo.name} setActive={() => updateActiveVideo(e)} name={e}/>)}</> : <></>}
+              </ul>
+              </aside>
             </div>
             <div className="column">
-              {activeVideo.name ? <><video src={`file://${recordingPath}/${selectedUnit}/${activeVideo.name}`} onTimeUpdate={e => setVideoTime(parseInt(e.target.currentTime*1000))} controls autoPlay/><h2 className="title is-2">{nameToDate(activeVideo.start+videoTime)}</h2>
+              {activeVideo.name ? <><video src={`file://${recordingPath}/${selectedUnit}/${activeVideo.name}`} onTimeUpdate={e => setVideoTime(parseInt(e.target.currentTime*1000))}
+                controls autoPlay/><h2 className="title is-2">{nameToDate(activeVideo.start+videoTime)}</h2>
                 <a className="button is-link" href={`file://${recordingPath}/${selectedUnit}/${activeVideo.name}`}>Zapisz nagranie</a></> : <></>}
             </div>
       </div>

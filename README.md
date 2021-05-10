@@ -1,2 +1,2 @@
-# less
-Local Electron Security System for Pub Baszta
+# BasztaVision
+Electron Security System for Pub Baszta

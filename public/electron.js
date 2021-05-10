@@ -1,7 +1,7 @@
 const isDev = require("electron-is-dev");
 
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu, protocol} = require('electron');
+const {app, BrowserWindow, Menu, protocol, ipcMain} = require('electron');
 const path = require('path');
 const findRemoveSync = require('find-remove');
 
@@ -34,11 +34,11 @@ if(!store.has('recording.chunkLength'))
 if(!store.has('recording.keepTime'))
   store.set('recording.keepTime', 48);
 if(!store.has('recording.path'))
-  store.set('recording.path', `${app.getPath('videos')}/less`);
+  store.set('recording.path', `${app.getPath('videos')}/basztvision`);
 try {
   fs.accessSync(store.get('recording.path'), fs.constants.R_OK | fs.constants.W_OK);
 } catch (err) {
-  store.set('recording.path', `${app.getPath('videos')}/less`);
+  store.set('recording.path', `${app.getPath('videos')}/basztvision`);
 }
 
 
@@ -66,13 +66,13 @@ const template = [
   {
     label: 'Ustawienia',
     click() {
-          openNewWindow('settings', 600, 300, 'LESS - Ustawienia')
+          openNewWindow('settings', 600, 300, 'BasztaVision - Ustawienia')
         }
   },
   {
     label: 'Nagrania',
     click() {
-          openNewWindow('recordings', 700, 900, 'LESS - Nagrania')
+          openNewWindow('recordings', 700, 900, 'BasztaVision - Nagrania')
         }
   },
   {
@@ -102,9 +102,9 @@ function openNewWindow(winPath, height, width, title) {
     show:false,
     //minimizable: false,
     webPreferences: {
-      nodeIntegration:true,
-      enableRemoteModule:true,
-      webSecurity: !isDev
+        preload: path.resolve(__dirname, `preload-${winPath}.js`),
+        contextIsolation: true,
+        webSecurity: !isDev
     }
     //fullscreenable: false
   })
@@ -132,10 +132,10 @@ function createWindow () {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    title: 'LESS - CCTV',
+    title: 'BasztaVision',
     webPreferences: {
-      nodeIntegration:true,
-      enableRemoteModule:true
+      preload: path.resolve(__dirname, 'preload.js'),
+      contextIsolation: true
     }
   })
 
@@ -186,7 +186,16 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()
 });
 
-
-
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+ipcMain.handle('relaunchApp', async (event,args) => {
+  app.relaunch();
+  app.exit();
+});
+
+ipcMain.on('storeGet', (event,args) => event.returnValue = store.get(args.id,args.def));
+
+ipcMain.handle('storeSet', (event,args) => store.set(args.id,args.value));
+
+ipcMain.handle('storeClear', (event,args) => store.clear());

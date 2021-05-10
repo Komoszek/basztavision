@@ -3,15 +3,6 @@ import { Link } from "react-router-dom";
 import Logo from "../logo.svg";
 import "./Settings.scss";
 
-const Store = window.require("electron-store");
-
-const electron = window.require("electron");
-
-const store = new Store();
-
-const app = electron.app || electron.remote.app;
-const remote = electron.remote;
-
 function TextField({fieldLabel, ...rest}){
   return(<div className="field">
         <label className="label">{fieldLabel}</label>
@@ -29,43 +20,43 @@ function ToggleSwitch({fieldLabel, id, ...rest}){
 }
 
 function Settings(){
-  const [height, setHeight] = useState(store.get('video.height'));
-  const [width, setWidth] = useState(store.get('video.width'));
-  const [videoPath, setVideoPath] = useState(store.get('video.path'));
-  const [numberOfUnits, setNumberOfUnits] = useState(store.get('video.numberOfUnits'));
+  const [height, setHeight] = useState(window.store.get('video.height'));
+  const [width, setWidth] = useState(window.store.get('video.width'));
+  const [videoPath, setVideoPath] = useState(window.store.get('video.path'));
+  const [numberOfUnits, setNumberOfUnits] = useState(window.store.get('video.numberOfUnits'));
 
-  const [recordingEnable, setRecordingEnable] = useState(store.get('recording.enable'));
-  const [recordingPath, setRecordingPath] = useState(store.get('recording.path'));
-  const [recordingQuality, setRecordingQuality] = useState(store.get('recording.quality'));
-  const [recordingCrf, setRecordingCrf] = useState(store.get('recording.crf'));
-  const [recordingChunkLength, setRecordingChunkLength] = useState(store.get('recording.chunkLength'));
-  const [recordingKeepTime, setRecordingKeepTime] = useState(store.get('recording.keepTime'));
+  const [recordingEnable, setRecordingEnable] = useState(window.store.get('recording.enable'));
+  const [recordingPath, setRecordingPath] = useState(window.store.get('recording.path'));
+  const [recordingQuality, setRecordingQuality] = useState(window.store.get('recording.quality'));
+  const [recordingCrf, setRecordingCrf] = useState(window.store.get('recording.crf'));
+  const [recordingChunkLength, setRecordingChunkLength] = useState(window.store.get('recording.chunkLength'));
+  const [recordingKeepTime, setRecordingKeepTime] = useState(window.store.get('recording.keepTime'));
 
   const submitSettings = () => {
-    store.set('video.height', height);
-    store.set('video.width', width);
-    store.set('video.path', videoPath);
-    store.set('video.numberOfUnits', numberOfUnits);
+    window.store.set('video.height', height);
+    window.store.set('video.width', width);
+    window.store.set('video.path', videoPath);
+    window.store.set('video.numberOfUnits', numberOfUnits);
 
-    store.set('recording.enable', recordingEnable);
-    store.set('recording.path', recordingPath);
-    store.set('recording.quality', recordingQuality);
-    store.set('recording.crf', recordingCrf);
-    store.set('recording.chunkLength', recordingChunkLength);
-    store.set('recording.keepTime', recordingKeepTime);
+    window.store.set('recording.enable', recordingEnable);
+    window.store.set('recording.path', recordingPath);
+    window.store.set('recording.quality', recordingQuality);
+    window.store.set('recording.crf', recordingCrf);
+    window.store.set('recording.chunkLength', recordingChunkLength);
+    window.store.set('recording.keepTime', recordingKeepTime);
 
-    app.relaunch()
-    app.exit();
+
+    window.electron.relaunchApp();
   }
 
   const resetSettings = () => {
-    store.clear();
+    window.store.clear();
 
-    app.relaunch();
-    app.exit();
+    window.electron.relaunchApp();
   }
 
-  const closeWindow = () => remote.getCurrentWindow().close();
+  const closeWindow = () => window.close();
+
     return (
       <div className="settingsContainer">
       <TextField fieldLabel="Wysokość" type="number" min="1" value={height} onChange={e => setHeight(parseInt(e.target.value))} required/>
