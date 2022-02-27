@@ -16,6 +16,11 @@ npm build
 ```
 Bundled app will be available in `build` directory.
 
+## Features
+- Splitting cameras feeds of grabber card that allows for single camera feed at the same time.
+- Saving videos
+- Brightness and contrast control
+
 ## TODO
 - Project structure refactor
 - Support for multiple cameras
