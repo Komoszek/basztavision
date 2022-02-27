@@ -7,7 +7,6 @@ import ContextMenuContext from './ContextMenu-context';
 var ctx = {};
 
 function VideoGrabber() {
-
   useEffect(() => {
     let worker = window.electron.grabber.run(window.store.get('video.numberOfUnits'), window.store.get('video.path'),
       (err, result, data) => {

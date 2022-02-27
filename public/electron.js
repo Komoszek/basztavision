@@ -34,11 +34,11 @@ if(!store.has('recording.chunkLength'))
 if(!store.has('recording.keepTime'))
   store.set('recording.keepTime', 48);
 if(!store.has('recording.path'))
-  store.set('recording.path', `${app.getPath('videos')}/basztvision`);
+  store.set('recording.path', `${app.getPath('videos')}/basztavision`);
 try {
   fs.accessSync(store.get('recording.path'), fs.constants.R_OK | fs.constants.W_OK);
 } catch (err) {
-  store.set('recording.path', `${app.getPath('videos')}/basztvision`);
+  store.set('recording.path', `${app.getPath('videos')}/basztavision`);
 }
 
 
@@ -112,8 +112,8 @@ function openNewWindow(winPath, height, width, title) {
 
   windows[winPath].loadURL(
       isDev
-      ? `http://localhost:3000/index.html#${winPath}`
-      : `file://${path.join(__dirname, `../build/index.html#${winPath}`)}`
+      ? `http://localhost:3000/index.html#/${winPath}`
+      : `file://${path.join(__dirname, `../build/index.html#/${winPath}`)}`
   )
 
 
